@@ -30,6 +30,7 @@
 - [Configuration Reference](#configuration-reference)
 - [API Endpoints Reference](#api-endpoints-reference)
 - [Running Tests](#running-tests)
+- [Future Versions Roadmap](#future-versions-roadmap)
 
 ---
 
@@ -490,6 +491,51 @@ All settings are in `.env` / `app/utils/config.py`:
 .\venv\Scripts\python tests/test_pipeline.py
 .\venv\Scripts\python tests/test_api.py
 ```
+
+---
+
+## 🚀 Future Versions Roadmap
+
+### v2 — Production Hardening (Next)
+
+| Feature | Why | How |
+|---|---|---|
+| **SSE Streaming** | 10s spinner kills UX | `stream=True` in OpenAI call → `StreamingResponse` → `EventSource` in JS |
+| **Rate Limiting** | Prevent API abuse | `slowapi` — 10 req/min chat, 5 req/min upload |
+| **CORS middleware** | Required for cross-origin frontends | `CORSMiddleware` in `main.py` |
+| **Background upload jobs** | Large PDFs block HTTP thread | FastAPI `BackgroundTasks` → return `202 + job_id` → poll `GET /api/jobs/{id}` |
+| **Multi-turn memory** | "What about the dosage?" needs prior context | Session ID + last-5-turns in memory, prepended to prompt |
+| **Structured logging** | Debugging in production | `structlog` JSON logs with `request_id`, `latency_ms`, `confidence_level` |
+| **Docker** | One-command deployment | `Dockerfile` + `docker-compose.yml` |
+
+### v3 — Model Upgrades
+
+| Feature | Why | How |
+|---|---|---|
+| **MedCPT embeddings** | Better clinical IR than BioBERT | Swap embedding model in `config.py` |
+| **SPLADE sparse retrieval** | Outperforms BM25 with learned expansion | Add `SPLADE` class alongside `BM25Retriever` |
+| **Streaming Cross-Encoder** | Reduce reranking latency | Batch prediction with async thread pool |
+| **Fine-tuned reranker** | ms-marco trained on web queries, not clinical | Fine-tune on MedMCQA dataset |
+| **ColBERT** | Late-interaction model — best of bi-encoder + cross-encoder | `RAGatouille` library integration |
+
+### v4 — Multi-User & HIPAA
+
+| Feature | Why | How |
+|---|---|---|
+| **User authentication** | Isolate document access per clinician | JWT tokens + `python-jose` |
+| **Per-user FAISS indexes** | Prevent cross-user data leakage | Separate FAISS index per `user_id` |
+| **Audit log** | HIPAA compliance | Every query + response logged with user_id + timestamp |
+| **Encryption at rest** | PHI protection | Encrypt FAISS index + PDFs with `cryptography` |
+| **PostgreSQL feedback** | Scalable RLHF data collection | Replace `feedback.jsonl` with async SQLAlchemy writes |
+
+### v5 — RLHF Fine-Tuning
+
+| Feature | Why | How |
+|---|---|---|
+| **SFT dataset export** | Turn collected feedback into training data | `GET /api/export/sft` → JSONL in HuggingFace format |
+| **Reward model training** | Learn from +1/-1 ratings | Train BERT classifier on (query, answer, rating) triplets |
+| **DPO fine-tuning** | Align model to clinician preferences | Direct Preference Optimization on Mistral-7B using feedback pairs |
+| **A/B testing** | Compare fine-tuned vs base model live | Route 50% traffic to fine-tuned model, compare feedback ratings |
 
 ---
 
