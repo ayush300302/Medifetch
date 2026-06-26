@@ -1,0 +1,56 @@
+# ─────────────────────────────────────────────────────────────
+# Healthcare RAG — .gitignore
+# ─────────────────────────────────────────────────────────────
+
+# Secrets — NEVER commit
+.env
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Virtual environments
+venv/
+env/
+.venv/
+.virtualenv/
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+*.egg
+
+# HuggingFace / SentenceTransformers model cache
+.cache/
+models/
+~/.cache/huggingface/
+
+# FAISS index (auto-rebuilt — do not commit large binary files)
+vector_store/*.index
+vector_store/*.faiss
+
+# Data directory (PDFs may be large / confidential)
+data/
+
+# Logs
+logs/
+*.log
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
