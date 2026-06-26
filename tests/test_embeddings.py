@@ -22,10 +22,10 @@ def cosine_similarity(v1, v2) -> float:
 
 
 def main() -> None:
-    print("🔄 Loading BioBERT Embedder (might take a minute to download on first run)...")
+    print("Loading BioBERT Embedder (might take a minute to download on first run)...")
     embedder = BioBERTEmbedder(device="cpu")
 
-    print("\n✅ Model Loaded Successfully!")
+    print("\nModel Loaded Successfully!")
     print(f"Embedding dimensions: {embedder.dimension}")
 
     # ── Test Queries ─────────────────────────────────────────────
@@ -49,14 +49,14 @@ def main() -> None:
     sim_1_2 = cosine_similarity(emb1, emb2)
     sim_1_3 = cosine_similarity(emb1, emb3)
 
-    print("\n📊 Cosine Similarity Analysis:")
+    print("\nCosine Similarity Analysis:")
     print(f"   - Similarity('{text1}', '{text2}') = {sim_1_2:.4f} (Should be high, synonym/related)")
     print(f"   - Similarity('{text1}', '{text3}') = {sim_1_3:.4f} (Should be lower, different medical topic)")
 
     if sim_1_2 > sim_1_3:
-        print("\n✅ SUCCESS: BioBERT successfully captured medical semantic relationships!")
+        print("\nSUCCESS: BioBERT successfully captured medical semantic relationships!")
     else:
-        print("\n❌ FAILURE: Check embedding normalization or model configuration.")
+        print("\nFAILURE: Check embedding normalization or model configuration.")
 
 
 if __name__ == "__main__":
