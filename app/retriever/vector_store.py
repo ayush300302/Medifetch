@@ -138,3 +138,52 @@ class FAISSVectorStore:
     def is_empty(self) -> bool:
         """Checks if the FAISS index is empty."""
         return self.index.ntotal == 0
+
+    def similarity_search(
+        self, query: str, k: int = 10
+    ) -> List[Tuple[DocumentChunk, float]]:
+        """
+        Searches the FAISS index for the most similar chunks to the query.
+
+        Args:
+            query: The query string.
+            k: The number of closest matches to retrieve.
+
+        Returns:
+            A list of tuples: (DocumentChunk, similarity_score).
+        """
+        if self.is_empty():
+            logger.warning("Search query received but vector store is empty.")
+            return []
+
+        # 1. Embed query
+        query_vector_list = self.embedder.embed_text(query)
+        # Convert to 2D numpy array of float32 as expected by FAISS
+        query_vector = np.array([query_vector_list], dtype=np.float32)
+
+        # 2. Search index
+        # index.search returns distances (inner product/cosine similarity) and index IDs
+        k = min(k, self.index.ntotal)
+        if k <= 0:
+            return []
+
+        distances, indices = self.index.search(query_vector, k)
+
+        # 3. Retrieve chunks using matching IDs
+        results: List[Tuple[DocumentChunk, float]] = []
+        for dist, idx in zip(distances[0], indices[0]):
+            # FAISS uses -1 to represent missing results if k > ntotal
+            if idx == -1:
+                continue
+
+            chunk = self.chunks_map.get(int(idx))
+            if chunk:
+                results.append((chunk, float(dist)))
+            else:
+                logger.warning(
+                    "FAISS index ID %d found, but no corresponding metadata in chunks_map.",
+                    idx,
+                )
+
+        return results
+

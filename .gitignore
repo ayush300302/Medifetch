@@ -30,8 +30,7 @@ models/
 ~/.cache/huggingface/
 
 # FAISS index (auto-rebuilt — do not commit large binary files)
-vector_store/*.index
-vector_store/*.faiss
+vector_store/
 
 # Data directory (PDFs may be large / confidential)
 data/

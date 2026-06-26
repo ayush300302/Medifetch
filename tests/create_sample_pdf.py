@@ -96,7 +96,7 @@ Treatment:
     # Save and output
     doc.save(output_path)
     doc.close()
-    print(f"✅ Created synthetic PDF at: {output_path}")
+    print(f"Created synthetic PDF at: {output_path}")
 
 
 if __name__ == "__main__":

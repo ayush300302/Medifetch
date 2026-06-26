@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediFetch — Clinical RAG Assistant</title>
+    <!-- Google Fonts: Outfit (headings) & Inter (body text) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <!-- Load dashboard controller script -->
+    <script src="app.js" defer></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- ── Sidebar / Control Panel ── -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-area">
+                    <span class="pulsing-pulse"></span>
+                    <i class="fa-solid fa-file-waveform logo-icon"></i>
+                    <h2>MediFetch</h2>
+                </div>
+                <p class="subtitle">Clinical RAG System</p>
+            </div>
+
+            <!-- Upload Guidelines Card -->
+            <div class="card upload-card">
+                <h3><i class="fa-solid fa-cloud-arrow-up"></i> Upload Guidelines</h3>
+                <p class="card-desc">Add medical protocols or treatment guidelines (PDF only)</p>
+                <div class="drop-zone" id="drop-zone">
+                    <i class="fa-solid fa-file-pdf drop-icon"></i>
+                    <p class="drop-text">Drag & drop PDF or <span>browse</span></p>
+                </div>
+                <input type="file" id="file-input" accept=".pdf" style="display: none;">
+                <div id="upload-status" class="status-msg hidden"></div>
+            </div>
+
+            <!-- Guidelines File List -->
+            <div class="card guidelines-card">
+                <div class="card-header-row">
+                    <h3><i class="fa-solid fa-book-medical"></i> Guidelines</h3>
+                    <span class="badge" id="doc-count">0</span>
+                </div>
+                <ul class="guidelines-list" id="guidelines-list">
+                    <li class="empty-state">No files uploaded yet.</li>
+                </ul>
+                <button class="btn btn-danger btn-block" id="clear-db-btn" title="Purge database index files and PDFs">
+                    <i class="fa-solid fa-trash-can"></i> Clear Database
+                </button>
+            </div>
+
+            <!-- Pipeline Parameters Status -->
+            <div class="card params-card">
+                <h3><i class="fa-solid fa-sliders"></i> Sane Defaults</h3>
+                <div class="param-row">
+                    <span class="param-label">Segment Size:</span>
+                    <span class="param-val">500 chars</span>
+                </div>
+                <div class="param-row">
+                    <span class="param-label">Continuity Overlap:</span>
+                    <span class="param-val">50 chars</span>
+                </div>
+                <div class="param-row">
+                    <span class="param-label">Embedding Dim:</span>
+                    <span class="param-val">384 (BioBERT)</span>
+                </div>
+                <div class="param-row">
+                    <span class="param-label">Rerank model:</span>
+                    <span class="param-val">MiniLM-L6</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ── Main Workspace ── -->
+        <main class="main-content">
+            <!-- Header Bar -->
+            <header class="workspace-header">
+                <div class="header-status">
+                    <span class="status-indicator online"></span>
+                    <div class="status-text">
+                        <h3>Clinical Chatbot</h3>
+                        <p id="connection-status">Connected to Local RAG Pipeline</p>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <a href="/docs" target="_blank" class="btn btn-secondary btn-sm" id="swagger-link">
+                        <i class="fa-solid fa-code"></i> API Docs
+                    </a>
+                </div>
+            </header>
+
+            <!-- Chat History Frame -->
+            <section class="chat-frame" id="chat-frame">
+                <!-- Welcome card initial display -->
+                <div class="welcome-container" id="welcome-container">
+                    <i class="fa-solid fa-hand-holding-medical welcome-icon"></i>
+                    <h2>Welcome to MediFetch Assistant</h2>
+                    <p>Ask clinical questions regarding drug options, pharmacological guidelines, or treatment pathways. The assistant will answer based **only** on your uploaded PDFs.</p>
+                    
+                    <div class="suggestions-area">
+                        <h4>Quick Test Prompts (Requires synthetic guideline PDF)</h4>
+                        <div class="suggestions-grid">
+                            <button class="suggest-btn" data-query="What is preferred as first line treatment for a patient with diabetes and chronic kidney disease?">
+                                <i class="fa-solid fa-heart-pulse"></i> Diabetes & CKD Treatment
+                            </button>
+                            <button class="suggest-btn" data-query="What are the sodium restriction limits for patients with Stage 1 hypertension?">
+                                <i class="fa-solid fa-carrot"></i> Sodium Restriction Limits
+                            </button>
+                            <button class="suggest-btn" data-query="What is the preferred reliever and controller therapy for mild asthma?">
+                                <i class="fa-solid fa-wind"></i> Mild Asthma Stepwise Therapy
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Chat messages wrapper -->
+                <div class="messages-list hidden" id="messages-list"></div>
+            </section>
+
+            <!-- Input Bar -->
+            <footer class="input-bar">
+                <div class="input-wrapper">
+                    <textarea id="chat-input" placeholder="Type a healthcare query (e.g. 'What first-line agents are preferred for diabetes?')..." rows="1"></textarea>
+                    <button class="btn btn-primary" id="send-btn" disabled>
+                        <i class="fa-solid fa-paper-plane"></i>
+                    </button>
+                </div>
+                <p class="disclaimer">Answers are derived strictly from source files. Verify clinical actions independently.</p>
+            </footer>
+        </main>
+
+        <!-- ── Citation Inspector Overlay Panel ── -->
+        <div class="citation-drawer" id="citation-drawer">
+            <div class="drawer-header">
+                <h3><i class="fa-solid fa-quote-right"></i> Context Inspector</h3>
+                <button class="close-drawer" id="close-drawer-btn"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="drawer-body">
+                <div class="meta-item">
+                    <span class="meta-label">Source Document:</span>
+                    <span class="meta-val" id="inspect-source">-</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Page Reference:</span>
+                    <span class="meta-val" id="inspect-page">-</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Reranker Relevance Score:</span>
+                    <span class="meta-val score-highlight" id="inspect-score">-</span>
+                </div>
+                <div class="meta-item block-item">
+                    <span class="meta-label">Retrieved Text segment:</span>
+                    <div class="context-block-text" id="inspect-text">
+                        No context selected. Click a citation bubble `[Source, Pg X]` in the chat log to inspect the source material.
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="drawer-overlay" id="drawer-overlay"></div>
+    </div>
+</body>
+</html>
