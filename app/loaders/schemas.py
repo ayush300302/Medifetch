@@ -1,8 +1,8 @@
 """
-Pydantic schemas for the document loading layer.
+Pydantic schemas for the document loading and chunking layer.
 
-These models represent the structured output of the PDF loader
-and are passed downstream to the chunker, embedder, and retriever.
+These models represent the structured output of the PDF loader and chunker,
+and are passed downstream to the embedder, vector store, and LLM generator.
 """
 
 from pydantic import BaseModel, Field
@@ -13,7 +13,7 @@ class PageDocument(BaseModel):
 
     source: str = Field(
         ...,
-        description="Absolute path or filename of the source PDF.",
+        description="Filename of the source PDF.",
         examples=["clinical_guidelines_2024.pdf"],
     )
     page_number: int = Field(
@@ -53,3 +53,40 @@ class LoadedDocument(BaseModel):
     def non_empty_pages(self) -> list[PageDocument]:
         """Pages that contain actual text content."""
         return [p for p in self.pages if p.char_count > 0]
+
+
+class DocumentChunk(BaseModel):
+    """Represents a small segment of text extracted from a page or pages."""
+
+    chunk_id: str = Field(
+        ...,
+        description="Unique identifier for the chunk, usually source_filename_page_index.",
+        examples=["guidelines.pdf_page_2_chunk_0"],
+    )
+    source: str = Field(
+        ...,
+        description="Source PDF filename.",
+        examples=["clinical_guidelines_2024.pdf"],
+    )
+    page_number: int = Field(
+        ...,
+        ge=1,
+        description="1-indexed page number from which this chunk was extracted.",
+    )
+    text: str = Field(
+        ...,
+        description="The chunk's textual content.",
+    )
+    word_count: int = Field(
+        ...,
+        ge=0,
+        description="Number of words in the chunk's text.",
+    )
+    char_count: int = Field(
+        ...,
+        ge=0,
+        description="Number of characters in the chunk's text.",
+    )
+
+    class Config:
+        frozen = True
